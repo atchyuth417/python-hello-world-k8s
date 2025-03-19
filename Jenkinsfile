@@ -29,28 +29,6 @@ pipeline {
                 }
             }
         }
-        stage('Install Helm (if needed)') {
-            steps {
-                script {
-                    sh '''
-                    if ! command -v helm &> /dev/null; then
-                        echo "Helm not found, installing in workspace..."
-                        curl -fsSL -o helm.tar.gz https://get.helm.sh/helm-v3.17.2-linux-amd64.tar.gz
-                        tar -zxvf helm.tar.gz
-                        mv linux-amd64/helm ./helm
-                        chmod +x ./helm
-                        ls -l ./helm  # Debug: Check permissions
-                        whoami        # Debug: Check running user
-                        pwd           # Debug: Check workspace path
-                        ./helm version || echo "Failed to run ./helm"
-                    else
-                        echo "Helm already installed"
-                        helm version
-                    fi
-                    '''
-                }
-            }
-        }
         stage('Update Helm Values') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'github-credentials', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
@@ -69,7 +47,7 @@ pipeline {
         stage('Deploy to Kubernetes via Helm') {
             steps {
                 withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG')]) {
-                    sh "./helm upgrade --install hello-world ${HELM_CHART_DIR} --namespace default --kubeconfig $KUBECONFIG"
+                    sh "helm upgrade --install hello-world ${HELM_CHART_DIR} --namespace default --kubeconfig $KUBECONFIG"
                 }
             }
         }
