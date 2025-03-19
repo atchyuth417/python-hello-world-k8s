@@ -71,10 +71,16 @@ pipeline {
             steps {
                 withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG')]) {
                     sh '''
-                    echo "Rendering Helm chart for debugging"
+                    echo "Saving kubeconfig to file"
+                    cat "$KUBECONFIG" > kubeconfig.yaml
+                    ls -lh kubeconfig.yaml  # Check size
+                    echo "Rendering Helm chart"
                     /tmp/helm template hello-world helm --namespace default > rendered.yaml
-                    ls -lh rendered.yaml  # Check size
-                    /tmp/helm upgrade --install hello-world helm --namespace default --kubeconfig "$KUBECONFIG" --debug
+                    ls -lh rendered.yaml
+                    echo "Cleaning up any existing release"
+                    /tmp/helm uninstall hello-world --namespace default --kubeconfig kubeconfig.yaml || echo "No existing release to uninstall"
+                    echo "Deploying with Helm"
+                    /tmp/helm upgrade --install hello-world helm --namespace default --kubeconfig kubeconfig.yaml --debug
                     '''
                 }
             }
