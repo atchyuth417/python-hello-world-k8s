@@ -1,8 +1,8 @@
 pipeline {
     agent any
     environment {
-        GITHUB_REPO = 'https://github.com/<your-username>/python-hello-world-k8s.git'
-        DOCKER_IMAGE = 'your-dockerhub-username/hello-world'
+        GITHUB_REPO = 'https://github.com/atchyuth417/python-hello-world-k8s.git'
+        DOCKER_IMAGE = 'atchyuth417/hello-world'
         HELM_CHART_DIR = 'helm'
         KUBE_CONFIG = credentials('kubeconfig') // Jenkins credential for kubeconfig
     }
