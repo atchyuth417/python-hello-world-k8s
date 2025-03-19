@@ -1,7 +1,7 @@
 replicaCount: 2
 image:
   repository: your-dockerhub-username/hello-world
-  tag: "9"
+  tag: "10"
   pullPolicy: IfNotPresent
 service:
   type: LoadBalancer
