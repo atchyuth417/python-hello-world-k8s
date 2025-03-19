@@ -4,7 +4,7 @@ pipeline {
         GITHUB_REPO = 'https://github.com/atchyuth417/python-hello-world-k8s.git'
         DOCKER_IMAGE = 'atchyuth417/hello-world'
         HELM_CHART_DIR = 'helm'
-        KUBE_CONFIG = credentials('kubeconfig') // Jenkins credential for kubeconfig
+        KUBE_CONFIG = credentials('kubeconfig')
     }
     stages {
         stage('Checkout Code') {
@@ -31,8 +31,20 @@ pipeline {
         }
         stage('Install Helm (if needed)') {
             steps {
-                sh 'curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3'
-                sh 'chmod +x get_helm.sh && ./get_helm.sh'
+                script {
+                    sh '''
+                    if ! command -v helm &> /dev/null; then
+                        echo "Helm not found, installing in workspace..."
+                        curl -fsSL -o helm.tar.gz https://get.helm.sh/helm-v3.17.2-linux-amd64.tar.gz
+                        tar -zxvf helm.tar.gz
+                        mv linux-amd64/helm ./helm
+                        chmod +x ./helm
+                    else
+                        echo "Helm already installed"
+                    fi
+                    ./helm version || helm version
+                    '''
+                }
             }
         }
         stage('Update Helm Values') {
@@ -52,7 +64,7 @@ pipeline {
         stage('Deploy to Kubernetes via Helm') {
             steps {
                 withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG')]) {
-                    sh "helm upgrade --install hello-world ${HELM_CHART_DIR} --namespace default --kubeconfig $KUBECONFIG"
+                    sh "./helm upgrade --install hello-world ${HELM_CHART_DIR} --namespace default --kubeconfig $KUBECONFIG"
                 }
             }
         }
