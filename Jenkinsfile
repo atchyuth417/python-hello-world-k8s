@@ -39,8 +39,7 @@ pipeline {
                         tar -zxvf helm.tar.gz
                         mv linux-amd64/helm /tmp/helm
                         chmod +x /tmp/helm
-                        ls -l /tmp/helm  # Debug: Verify permissions
-                        /tmp/helm version || echo "Failed to run /tmp/helm"
+                        /tmp/helm version
                     else
                         echo "Helm already installed"
                         helm version
@@ -53,14 +52,16 @@ pipeline {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'github-credentials', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
                     sh '''
-                    ls -l helm/values.yaml  # Debug: Verify file exists
-                    cat helm/values.yaml    # Debug: Check contents before
-                    sed -i 's|tag: \\"latest\\"|tag: \\"${BUILD_NUMBER}\\"|' helm/values.yaml
-                    cat helm/values.yaml    # Debug: Check contents after
-                    git status              # Debug: Check Git status
+                    ls -l helm/values.yaml
+                    cat helm/values.yaml
+                    sed -i "s|tag: \\"[^\\"]*\\"|tag: \\"${BUILD_NUMBER}\\"|" helm/values.yaml
+                    cat helm/values.yaml
+                    git status
                     git add helm/values.yaml
-                    git status              # Debug: Confirm staging
                     git commit -m "Update image tag to ${BUILD_NUMBER}" || echo "No changes to commit"
+                    git config user.email "jenkins@example.com"
+                    git config user.name "Jenkins"
+                    git config credential.helper '!f() { echo username=$GIT_USERNAME; echo password=$GIT_PASSWORD; }; f'
                     git push origin main
                     '''
                 }
@@ -70,7 +71,10 @@ pipeline {
             steps {
                 withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG')]) {
                     sh '''
-                    /tmp/helm upgrade --install hello-world helm --namespace default --kubeconfig "$KUBECONFIG"
+                    echo "Rendering Helm chart for debugging"
+                    /tmp/helm template hello-world helm --namespace default > rendered.yaml
+                    ls -lh rendered.yaml  # Check size
+                    /tmp/helm upgrade --install hello-world helm --namespace default --kubeconfig "$KUBECONFIG" --debug
                     '''
                 }
             }
