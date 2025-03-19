@@ -39,21 +39,26 @@ pipeline {
                         tar -zxvf helm.tar.gz
                         mv linux-amd64/helm ./helm
                         chmod +x ./helm
+                        ls -l ./helm  # Debug: Check permissions
+                        whoami        # Debug: Check running user
+                        pwd           # Debug: Check workspace path
+                        ./helm version || echo "Failed to run ./helm"
                     else
                         echo "Helm already installed"
+                        helm version
                     fi
-                    ./helm version || helm version
                     '''
                 }
             }
         }
         stage('Update Helm Values') {
             steps {
-                script {
+                withCredentials([usernamePassword(credentialsId: 'github-credentials', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
                     sh """
                     sed -i 's|tag: \\"latest\\"|tag: \\"${env.BUILD_NUMBER}\\"|' ${HELM_CHART_DIR}/values.yaml
                     git config user.email "jenkins@example.com"
                     git config user.name "Jenkins"
+                    git config credential.helper '!f() { echo username=$GIT_USERNAME; echo password=$GIT_PASSWORD; }; f'
                     git add ${HELM_CHART_DIR}/values.yaml
                     git commit -m "Update image tag to ${env.BUILD_NUMBER}"
                     git push origin main
