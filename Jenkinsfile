@@ -56,9 +56,8 @@ pipeline {
                     cat helm/values.yaml
                     sed -i "s|tag: \\"[^\\"]*\\"|tag: \\"${BUILD_NUMBER}\\"|" helm/values.yaml || echo "sed failed"
                     cat helm/values.yaml
-                    git diff
-                    git add helm/values.yaml
                     git status
+                    git add helm/values.yaml
                     git commit -m "Update image tag to ${BUILD_NUMBER}" || echo "No changes to commit"
                     git config user.email "jenkins@example.com"
                     git config user.name "Jenkins"
@@ -74,8 +73,8 @@ pipeline {
                     sh '''
                     echo "Saving kubeconfig to file"
                     cat "$KUBECONFIG" > kubeconfig.yaml
-                    ls -lh kubeconfig.yaml
-                    wc -l kubeconfig.yaml
+                    ls -lh kubeconfig.yaml  # Check size
+                    wc -l kubeconfig.yaml   # Check line count
                     echo "Rendering Helm chart"
                     /tmp/helm template hello-world helm --namespace default > rendered.yaml
                     ls -lh rendered.yaml
