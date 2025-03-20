@@ -54,7 +54,7 @@ pipeline {
                     sh '''
                     ls -l helm/values.yaml
                     cat helm/values.yaml
-                    sed -i "s|tag: \\"[^\\"]*\\"|tag: \\"${BUILD_NUMBER}\\"|" helm/values.yaml
+                    sed -i "s|tag: \\"[^\\"]*\\"|tag: \\"${BUILD_NUMBER}\\"|" helm/values.yaml || echo "sed failed"
                     cat helm/values.yaml
                     git status
                     git add helm/values.yaml
@@ -74,13 +74,14 @@ pipeline {
                     echo "Saving kubeconfig to file"
                     cat "$KUBECONFIG" > kubeconfig.yaml
                     ls -lh kubeconfig.yaml  # Check size
+                    wc -l kubeconfig.yaml   # Check line count
                     echo "Rendering Helm chart"
                     /tmp/helm template hello-world helm --namespace default > rendered.yaml
                     ls -lh rendered.yaml
                     echo "Cleaning up any existing release"
                     /tmp/helm uninstall hello-world --namespace default --kubeconfig kubeconfig.yaml || echo "No existing release to uninstall"
                     echo "Deploying with Helm"
-                    /tmp/helm upgrade --install hello-world helm --namespace default --kubeconfig kubeconfig.yaml --debug
+                    /tmp/helm upgrade --install hello-world helm --namespace default --kubeconfig kubeconfig.yaml --debug --atomic
                     '''
                 }
             }
